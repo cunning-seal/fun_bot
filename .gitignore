@@ -102,3 +102,11 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# PyCharm configs
+.idea/
+.DS_Store
+
+
+.gitsecret/keys/random_seed
+echo/config.py
