@@ -1,56 +1,39 @@
-from telegram import Bot
 from telegram.ext import Updater,CommandHandler,MessageHandler, Filters
-from echo.config import TG_TOKEN
-from echo.config import TG_API_URL
-from echo.config import OPEN_WEATHER_API_KEY
 
-import requests
+from base import TG_TOKEN, TG_API_URL, do_start, start_test_callback, stop_test_callback
+from widgets.echo import do_echo
+from widgets.weather import *
 
-
-def do_start(bot: Bot, update: Updater):
-    bot.send_message(chat_id=update.message.chat_id, text="Hello world")
-
-
-def do_weather(bot: Bot, update: Updater):
-    # resp = requests.get("api.openweathermap.org/data/2.5/forecast?lat=35&lon=139&appid={}".format(OPEN_WEATHER_API_KEY))
-    bot.send_message(chat_id=update.message.chat_id, text="Requesting data ...")
-    resp = requests.get("https://postman-echo.com/get?foo1=bar1&foo2=bar2")
-    bot.send_message(chat_id=update.message.chat_id, text=resp.text)
-
-
-def do_echo(bot: Bot, update: Updater):
-    text = update.message.text
-    chat_id = update.message.chat_id
-
-    if text == "погода":
-        resp = requests.get("api.openweathermap.org/data/2.5/forecast?lat=35&lon=139&appid={}".format(OPEN_WEATHER_API_KEY))
-        print(resp.status_code)
-        print(resp.text)
-        text = resp.text
-    bot.send_message(chat_id=update.message.chat_id, text="Ваш ID: {}\n{}".format(chat_id, text))
+import logging
 
 
 def main():
 
-    bot = Bot(TG_TOKEN,base_url=TG_API_URL)
-
-    updater = Updater(bot=bot)
+    updater = Updater(token=TG_TOKEN, base_url=TG_API_URL, use_context=True)
+    dispatcher = updater.dispatcher
+    jq = updater.job_queue
 
     menu = {
         "start": do_start,
-        "weather": do_weather
+        "weather": do_weather,
+        "test": start_test_callback,
+        "stop_test": stop_test_callback,
+        "start_weather": start_weather_callback,
+        "stop_weather": stop_weather_callback
     }
 
     for command, handler in menu.items():
         h = CommandHandler(command, handler)
-        updater.dispatcher.add_handler(h)
+        dispatcher.add_handler(h)
 
     message_handler = MessageHandler(Filters.text, do_echo)
-    updater.dispatcher.add_handler(message_handler)
+    dispatcher.add_handler(message_handler)
+
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        level=logging.INFO)
 
     updater.start_polling()
     updater.idle()
-
 
 
 if __name__ == '__main__':
